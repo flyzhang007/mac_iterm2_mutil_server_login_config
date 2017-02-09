@@ -1,0 +1,47 @@
+#!/usr/bin/expect  
+  
+# 参数1：远程host；参数2：远程password 
+if { $argc != 2 } {
+    send_user "Usage: host password\n"
+    exit
+}
+
+set host [lindex $argv 0]
+set pw [lindex $argv 1]
+
+#set TERMSERV "yourjumpserve" #yourjumpserver  跳板机服务器
+set TERMSERV "ip or domain"
+#set USER "jumpserveruser" #jumpserveruser  跳板机用户名
+set USER "***"
+#set PASSWORD ""#jumperserverpasswd # 跳板机密码
+set PASSWORD ""
+
+
+#这部分是验证码的,可能很多不需要
+#set fd [open /place/to/passcode r] # 本地存放passcode的地方
+#gets $fd pc
+#close $fd
+
+
+# Start the session
+catch {spawn ssh -l $USER $TERMSERV -A} # 登录跳板机,这里-A是将ssh key带到跳板机上是,因为有些跳板机上需要二次验证key
+
+# Login
+expect "*assword:*" { send "$PASSWORD\r" }
+#expect "*passcode:*" { send "$pc\r" } 
+
+
+#通过跳板机登录线上机器
+#expect "*hostname*" { send "ssh -l $USER $host\r" } # hostname为你跳板机的名字
+
+#set JUMPUSER "***" #这是从跳板机登陆到服务器上的用户名
+#这里username是sdev
+set JUMPUSER "sdev"
+expect "" { send "ssh -l $JUMPUSER $host\r" }
+expect {
+    "(yes/no)?" {send "yes\n";exp_continue}
+    "*assword:*"  {send "$pw\n"}
+}
+#expect "*$host*" { send "cd ~\r"; interact }
+#把控制权交给终端,如果没有这个的话会直接退出,当然有些情况是不需要的,例如就想执行一下命令
+interact
